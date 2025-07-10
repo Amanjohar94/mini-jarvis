@@ -3,6 +3,8 @@ import streamlit as st
 from utils.config import FEATURES, VOICE_ENABLED
 from modules import chat, news, markets, voice , tts 
 from modules import tasks
+from modules import weather
+from modules import memory
 
 st.set_page_config(
     page_title="Mini-JARVIS",
@@ -65,6 +67,22 @@ if FEATURES["voice"]:
             if st.session_state["voice_enabled"]:
                 tts.speak(response, gender=voice_gender)
 
+from modules import wake
+
+if FEATURES.get("voice", True):
+    st.header("🎙 Wake Word Listening")
+    if st.button("🔊 Start Listening"):
+        st.info("Listening for 'Hey Jarvis'...")
+        if wake.listen_for_wake_word():
+            st.success("✅ Wake word detected!")
+            transcript = voice.transcribe_voice()
+            st.write("You said:", transcript)
+            response = chat.ask_gpt(transcript)
+            st.write("Jarvis:", response)
+            if st.session_state["voice_enabled"]:
+                tts.speak(response, gender=st.session_state["selected_voice"])
+        else:
+            st.warning("Wake word not detected.")
 
 
 if FEATURES["news"]:
@@ -98,3 +116,12 @@ for i, task in enumerate(task_list):
             tasks.delete_task(i)
             st.rerun()
 
+if FEATURES.get("weather", True):  # default to enabled
+    st.header("🌤️ Weather")
+    city = st.text_input("Enter city name", value="Delhi", key="weather_city")
+    if st.button("Get Weather"):
+        report = weather.get_weather(city)
+        st.success(report)
+
+    
+  
