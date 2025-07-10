@@ -4,15 +4,25 @@ import streamlit.components.v1 as components
 from utils.config import FEATURES, VOICE_ENABLED
 from modules import chat, news, markets, voice, tasks, weather, memory, wake
 
-# Browser-based TTS
+# ✅ Browser-based TTS (mobile safe)
 def speak_browser(text: str):
     components.html(f"""
+        <button id="speak-btn" style="display:none;" onclick="speakText()">Speak</button>
         <script>
-            const utterance = new SpeechSynthesisUtterance({text!r});
-            utterance.lang = "en-US";
-            utterance.rate = 1;
-            utterance.pitch = 1;
-            speechSynthesis.speak(utterance);
+            function speakText() {{
+                const message = new SpeechSynthesisUtterance({text!r});
+                message.lang = "en-US";
+                message.pitch = 1;
+                message.rate = 1;
+                speechSynthesis.speak(message);
+            }}
+            document.addEventListener("click", function triggerOnce() {{
+                const btn = document.getElementById("speak-btn");
+                if (btn) {{
+                    btn.click();
+                }}
+                document.removeEventListener("click", triggerOnce);
+            }});
         </script>
     """, height=0)
 
@@ -27,7 +37,6 @@ st.sidebar.markdown("### 🎛 Voice Settings")
 if "voice_enabled" not in st.session_state:
     st.session_state["voice_enabled"] = True
 st.session_state["voice_enabled"] = st.sidebar.toggle("🔊 Enable Voice", value=True)
-
 voice_gender = st.sidebar.selectbox("🗣 Select Voice", ["Default", "Male", "Female"])
 
 st.write("✅ Task section loaded")
@@ -41,33 +50,8 @@ if FEATURES["chat"]:
         response = chat.ask_gpt(user_prompt)
         st.write("Jarvis:", response)
         if st.session_state["voice_enabled"]:
+            st.markdown("📱 On mobile, tap anywhere to enable voice")
             speak_browser(response)
-
-# Voice Input
-if FEATURES["voice"]:
-    st.header("🎤 Voice Input")
-    if st.button("🎙️ Record Voice"):
-        transcript = voice.transcribe_voice()
-        st.write("You said:", transcript)
-
-        if transcript:
-            command = transcript.lower()
-            if command.startswith("add task"):
-                task_text = command.split("add task", 1)[-1].strip()
-                tasks.add_task(task_text)
-                st.success(f"📝 Task added: {task_text}")
-                response = f"Got it. I’ve added '{task_text}' to your task list."
-            elif command.startswith("remind me to"):
-                task_text = command.split("remind me to", 1)[-1].strip()
-                tasks.add_task(task_text)
-                st.success(f"📝 Task added: {task_text}")
-                response = f"Okay! Reminder set to '{task_text}'."
-            else:
-                response = chat.ask_gpt(transcript)
-
-            st.write("Jarvis:", response)
-            if st.session_state["voice_enabled"]:
-                speak_browser(response)
 
 # Wake Word
 if FEATURES.get("voice", True):
@@ -97,7 +81,7 @@ if FEATURES["markets"]:
     st.header("📈 Market Tracker")
     st.line_chart(markets.get_stock_data("AAPL"))
 
-# Task Manager
+# Tasks
 st.header("📝 Your Task List")
 new_task = st.text_input("Add a new task")
 if st.button("➕ Add Task") and new_task.strip():
