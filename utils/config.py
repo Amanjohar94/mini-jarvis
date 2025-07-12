@@ -9,8 +9,11 @@ NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 FEATURES = {
     "chat": True,
     "news": True,
+    "weather": True,
+    "tasks": True,
     "markets": True,
-    "voice": True
+    # Optional:
+    # "notes": True
 }
 
 VOICE_ENABLED = True  # default to unmuted
