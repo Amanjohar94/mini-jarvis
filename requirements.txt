@@ -3,3 +3,4 @@ openai
 requests
 yfinance
 python-dotenv
+st-chat-input-multimodal
